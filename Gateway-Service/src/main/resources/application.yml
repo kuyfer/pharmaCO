@@ -8,23 +8,33 @@ spring:
               uri: http://localhost:8081
               predicates:
                 - Path=/config/**
+              filters:
+                - StripPrefix=1
 
             - id: Discovery-service
               uri: http://localhost:8761
               predicates:
                 - Path=/discovery/**
+              filters:
+                - StripPrefix=1
 
             - id: Produit-service
               uri: http://localhost:8083
               predicates:
                 - Path=/produit/**
+              filters:
+                - StripPrefix=1
 
             - id: Livraison-service
               uri: http://localhost:8084
               predicates:
                 - Path=/livraison/**
+              filters:
+                - StripPrefix=1
 
             - id: Commande-service
               uri: http://localhost:8085
               predicates:
                 - Path=/commande/**
+              filters:
+                - StripPrefix=1

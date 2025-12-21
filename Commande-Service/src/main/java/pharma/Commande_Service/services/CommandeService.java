@@ -19,6 +19,7 @@ public class CommandeService {
 
     private final CommandeRepository commandeRepository;
     private final ProduitServiceClient produitServiceClient;
+    private final LivraisonServiceClient livraisonServiceClient;
 
     @Transactional
     public CommandeResponseDTO passerCommande(CommandeRequestDTO request) {
@@ -98,6 +99,7 @@ public class CommandeService {
                 "quantiteStock", stockDisponible - request.getQuantite()
         );
 
+        boolean stockUpdated = false;
         try {
             Object updateResult = produitServiceClient.updateProduitStock(
                     request.getProduitId(), stockUpdate
@@ -105,9 +107,8 @@ public class CommandeService {
             log.info("Stock updated successfully for product ID: {}. New stock: {}",
                     request.getProduitId(), stockUpdate.get("quantiteStock"));
 
-            // Update order status to completed
-            savedCommande.setStatut("COMPLETEE");
-            commandeRepository.save(savedCommande);
+            stockUpdated = true;
+            savedCommande.setStatut("STOCK_UPDATED");
 
         } catch (Exception e) {
             log.error("Failed to update stock for product ID {}: {}",
@@ -120,12 +121,43 @@ public class CommandeService {
             log.warn("Order {} created but stock update failed. Manual intervention needed.",
                     savedCommande.getId());
 
-            // We still return the order, but client should know about the issue
             throw new RuntimeException("Order created but failed to update stock. Order ID: " +
                     savedCommande.getId() + ". Please contact support.");
         }
 
-        // 8. Return response DTO
+        // 8. Create delivery in Livraison-Service (only if stock was updated successfully)
+        if (stockUpdated) {
+            try {
+                log.info("Creating delivery for order ID: {}", savedCommande.getId());
+
+                Map<String, Object> livraisonRequest = Map.of(
+                        "commandeId", savedCommande.getId(),
+                        "produitId", savedCommande.getProduitId(),
+                        "clientNom", savedCommande.getClientNom(),
+                        "clientEmail", savedCommande.getClientEmail(),
+                        "adresseLivraison", savedCommande.getAdresseLivraison()
+                );
+
+                Object livraisonResponse = livraisonServiceClient.creerLivraison(livraisonRequest);
+                log.info("Delivery created successfully for order ID: {}. Response: {}",
+                        savedCommande.getId(), livraisonResponse);
+
+                savedCommande.setStatut("COMPLETEE");
+
+            } catch (Exception e) {
+                log.error("Failed to create delivery for order ID {}: {}",
+                        savedCommande.getId(), e.getMessage());
+
+                // Delivery failure shouldn't fail the order, just mark it
+                savedCommande.setStatut("DELIVERY_PENDING");
+                log.warn("Order {} completed but delivery creation failed. Delivery can be created manually.",
+                        savedCommande.getId());
+            }
+        }
+
+        commandeRepository.save(savedCommande);
+
+        // 9. Return response DTO
         return mapToResponseDTO(savedCommande);
     }
 
