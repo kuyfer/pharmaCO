@@ -50,6 +50,11 @@ public class LivraisonController {
 
     @GetMapping("/health")
     public ResponseEntity<String> healthCheck() {
-        return ResponseEntity.ok("Livraison Service is UP on port 8087");
+        return ResponseEntity.ok("Livraison Service is UP on port 8084");
+    }
+
+    @GetMapping("/")
+    public String home() {
+        return "Livraison Service is running. Use /api/livraisons for API endpoints.";
     }
 }
