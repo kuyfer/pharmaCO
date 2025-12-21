@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.*;
 )
 public interface ProduitServiceClient {
 
-    @GetMapping("/api/produits/{id}")
+    @GetMapping("/produit/api/produits/{id}")
     Object getProduitById(@PathVariable Long id);
 
-    @PatchMapping("/api/produits/{id}")
+    @PatchMapping("/produit/api/produits/{id}/stock")
     Object updateProduitStock(
             @PathVariable Long id,
             @RequestBody Object stockUpdate

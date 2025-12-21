@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 @FeignClient(name = "livraison-service", url = "http://localhost:8080")
 public interface LivraisonServiceClient {
 
-    @PostMapping("/api/livraisons")
+    @PostMapping("/livraison/api/livraisons")
     Object creerLivraison(@RequestBody Object livraisonRequest);
 }
